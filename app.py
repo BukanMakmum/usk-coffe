@@ -64,10 +64,27 @@ for model_key in yolo_models.keys():
 # Display header with formatted text
 st.markdown(f'<p class="title-center">Multiclass Coffee Bean Detection System using Deep Learning</p>', unsafe_allow_html=True)
 
-# Set the default image path
+# Sidebar for confidence level settings and input source selection
+confidence = st.sidebar.slider("Model Confidence Level", 0.25, 1.0, 0.4, 0.01)
+source_select = st.sidebar.selectbox(f"Select Detection Object", settings.SOURCES_LIST)
+
+source_img = None
+boxes = {model_key: [] for model_key in yolo_models.keys()}
+
+# Flag to mark if the process button has been clicked
+process_button_clicked = False
+
+# If image source is selected
+if source_select == settings.IMAGE:
+    source_img = st.sidebar.file_uploader(
+        "Select Image File", type=("jpg", "jpeg", "png", 'bmp', 'webp'))
+
+# Define default image path from settings.py
 default_image_path = settings.DEFAULT_IMAGE  # Use path from settings.py
 
 # Load the default image
+default_image = None  # Initialize default_image as None
+
 try:
     default_image = Image.open(default_image_path)
     default_image = ImageOps.exif_transpose(default_image)  # Ensure correct image orientation
@@ -81,17 +98,27 @@ except Exception as ex:
     logging.error(f"Error opening default image: {str(ex)}")
 
 # Process detection with the default image
-if default_image:
+if default_image is not None:  # Check if default_image was successfully loaded
     # Object Detection Process
     st.subheader("Detection Process")
 
     # Create 3 columns
     col1, col2, col3 = st.columns(3)  # Create 3 columns
 
+    # Column 1: Display default or uploaded image
+    with col1:
+        if not source_img:  # If no image is uploaded, display the default image
+            st.image(default_image, caption="Default Image", use_container_width=True)
+        else:  # If an image is uploaded, display the uploaded image
+            uploaded_image = Image.open(source_img)
+            uploaded_image = ImageOps.exif_transpose(uploaded_image)
+            uploaded_image = uploaded_image.resize((640, int(640 / uploaded_image.width * uploaded_image.height)))
+            st.image(uploaded_image, caption="Uploaded Image", use_container_width=True)
+
     # Column 2: Display YOLOv8 detection results
     with col2:
         start_time_yolov8 = time.time()
-        res_yolov8 = yolo_models['yolov8n'].predict(default_image, conf=0.4)
+        res_yolov8 = yolo_models['yolov8n'].predict(default_image if not source_img else uploaded_image, conf=confidence)
         end_time_yolov8 = time.time()
         boxes_yolov8 = res_yolov8[0].boxes
         res_yolov8_plotted = res_yolov8[0].plot()[:, :, ::-1]
@@ -101,7 +128,7 @@ if default_image:
     # Column 3: Display YOLOv11 detection results
     with col3:
         start_time_yolov11 = time.time()
-        res_yolov11 = yolo_models['yolov11n'].predict(default_image, conf=0.4)
+        res_yolov11 = yolo_models['yolov11n'].predict(default_image if not source_img else uploaded_image, conf=confidence)
         end_time_yolov11 = time.time()
         boxes_yolov11 = res_yolov11[0].boxes
         res_yolov11_plotted = res_yolov11[0].plot()[:, :, ::-1]
@@ -124,7 +151,7 @@ if default_image:
 
     # Analysis for YOLOv8
     if len(boxes_yolov8) > 0:
-        detected_objects_yolov8 = [box for box in boxes_yolov8 if box.conf.item() > 0.4]
+        detected_objects_yolov8 = [box for box in boxes_yolov8 if box.conf.item() > confidence]
         categories_yolov8 = [int(box.cls.item()) for box in detected_objects_yolov8]
         class_names_yolov8 = [class_names[cls] for cls in categories_yolov8]  # Replace ID with class names
         confidences_yolov8 = [float(box.conf.item()) for box in detected_objects_yolov8]
@@ -144,7 +171,7 @@ if default_image:
 
     # Analysis for YOLOv11
     if len(boxes_yolov11) > 0:
-        detected_objects_yolov11 = [box for box in boxes_yolov11 if box.conf.item() > 0.4]
+        detected_objects_yolov11 = [box for box in boxes_yolov11 if box.conf.item() > confidence]
         categories_yolov11 = [int(box.cls.item()) for box in detected_objects_yolov11]
         class_names_yolov11 = [class_names[cls] for cls in categories_yolov11]  # Replace ID with class names
         confidences_yolov11 = [float(box.conf.item()) for box in detected_objects_yolov11]
@@ -167,6 +194,12 @@ if default_image:
 
     # Display analysis table
     st.table(df)
+else:
+    st.error("The default image could not be loaded.")
+
+# Check model status
+else:
+    st.warning("Select an image first to start detection.")
 
 # Check if GPU is available
 with st.sidebar:
