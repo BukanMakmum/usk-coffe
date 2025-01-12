@@ -15,5 +15,3 @@ DEFAULT_DETECT_IMAGE = os.path.join(IMAGES_DIR, 'Detected_Image.jpg')  # Image f
 # Store paths for other sources
 SOURCES_LIST = ['Image']
 IMAGE = 'Image'
-
-
