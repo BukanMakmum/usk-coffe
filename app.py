@@ -82,23 +82,10 @@ if source_select == settings.IMAGE:
 # Define default image path from settings.py
 default_image_path = settings.DEFAULT_IMAGE  # Use path from settings.py
 
-# Load the default image
-default_image = None  # Initialize default_image as None
+# Process object detection if the button is clicked
+if source_img is not None and st.sidebar.button("Process Detection"):
+    process_button_clicked = True  # Mark that the button has been clicked
 
-try:
-    default_image = Image.open(default_image_path)
-    default_image = ImageOps.exif_transpose(default_image)  # Ensure correct image orientation
-    default_image = default_image.resize((640, int(640 / default_image.width * default_image.height)))
-    st.image(default_image, caption="Default Image", use_container_width=True)
-except FileNotFoundError:
-    st.error("Default image file not found.")
-    logging.error("Default image file not found.")
-except Exception as ex:
-    st.error(f"Error opening default image: {str(ex)}")
-    logging.error(f"Error opening default image: {str(ex)}")
-
-# Process detection with the default image
-if default_image is not None:  # Check if default_image was successfully loaded
     # Object Detection Process
     st.subheader("Detection Process")
 
@@ -108,7 +95,19 @@ if default_image is not None:  # Check if default_image was successfully loaded
     # Column 1: Display default or uploaded image
     with col1:
         if not source_img:  # If no image is uploaded, display the default image
-            st.image(default_image, caption="Default Image", use_container_width=True)
+            try:
+                # Load default image file
+                default_image = Image.open(default_image_path)
+                default_image = ImageOps.exif_transpose(default_image)  # Ensure correct image orientation
+                st.image(default_image, caption="Default Image", use_container_width=True)
+            except FileNotFoundError:
+                # Handle error if default image file is not found
+                st.error("Default image file not found.")
+                logging.error("Default image file not found.")
+            except Exception as ex:
+                # Handle general errors when opening the image
+                st.error(f"Error opening default image: {str(ex)}")
+                logging.error(f"Error opening default image: {str(ex)}")
         else:  # If an image is uploaded, display the uploaded image
             uploaded_image = Image.open(source_img)
             uploaded_image = ImageOps.exif_transpose(uploaded_image)
@@ -118,9 +117,9 @@ if default_image is not None:  # Check if default_image was successfully loaded
     # Column 2: Display YOLOv8 detection results
     with col2:
         start_time_yolov8 = time.time()
-        res_yolov8 = yolo_models['yolov8n'].predict(default_image if not source_img else uploaded_image, conf=confidence)
+        res_yolov8 = yolo_models['yolov8n'].predict(uploaded_image, conf=confidence)
         end_time_yolov8 = time.time()
-        boxes_yolov8 = res_yolov8[0].boxes
+        boxes['yolov8n'] = res_yolov8[0].boxes
         res_yolov8_plotted = res_yolov8[0].plot()[:, :, ::-1]
         st.image(res_yolov8_plotted, caption='YOLOv8 Detection Results', use_container_width=True)
         detection_time_yolov8 = end_time_yolov8 - start_time_yolov8
@@ -128,9 +127,9 @@ if default_image is not None:  # Check if default_image was successfully loaded
     # Column 3: Display YOLOv11 detection results
     with col3:
         start_time_yolov11 = time.time()
-        res_yolov11 = yolo_models['yolov11n'].predict(default_image if not source_img else uploaded_image, conf=confidence)
+        res_yolov11 = yolo_models['yolov11n'].predict(uploaded_image, conf=confidence)
         end_time_yolov11 = time.time()
-        boxes_yolov11 = res_yolov11[0].boxes
+        boxes['yolov11n'] = res_yolov11[0].boxes
         res_yolov11_plotted = res_yolov11[0].plot()[:, :, ::-1]
         st.image(res_yolov11_plotted, caption='YOLOv11 Detection Results', use_container_width=True)
         detection_time_yolov11 = end_time_yolov11 - start_time_yolov11
@@ -150,14 +149,15 @@ if default_image is not None:  # Check if default_image was successfully loaded
     }
 
     # Analysis for YOLOv8
-    if len(boxes_yolov8) > 0:
-        detected_objects_yolov8 = [box for box in boxes_yolov8 if box.conf.item() > confidence]
+    if len(boxes['yolov8n']) > 0:
+        # Access detection box coordinates for object counting
+        detected_objects_yolov8 = [box for box in boxes['yolov8n'] if box.conf.item() > confidence]
         categories_yolov8 = [int(box.cls.item()) for box in detected_objects_yolov8]
         class_names_yolov8 = [class_names[cls] for cls in categories_yolov8]  # Replace ID with class names
         confidences_yolov8 = [float(box.conf.item()) for box in detected_objects_yolov8]
         data.append({
             "Model": "YOLOv8",
-            "Detected Class Names": ', '.join(map(str, set(class_names_yolov8))),
+            "Detected Class Names": ', '.join(map(str, set(class_names_yolov8))),  # Display class names
             "Average Confidence Level": f"{sum(confidences_yolov8) / len(confidences_yolov8):.2f}",
             "Detection Time": f"{detection_time_yolov8:.3f} seconds"
         })
@@ -170,14 +170,15 @@ if default_image is not None:  # Check if default_image was successfully loaded
         })
 
     # Analysis for YOLOv11
-    if len(boxes_yolov11) > 0:
-        detected_objects_yolov11 = [box for box in boxes_yolov11 if box.conf.item() > confidence]
+    if len(boxes['yolov11n']) > 0:
+        # Access detection box coordinates for object counting
+        detected_objects_yolov11 = [box for box in boxes['yolov11n'] if box.conf.item() > confidence]
         categories_yolov11 = [int(box.cls.item()) for box in detected_objects_yolov11]
         class_names_yolov11 = [class_names[cls] for cls in categories_yolov11]  # Replace ID with class names
         confidences_yolov11 = [float(box.conf.item()) for box in detected_objects_yolov11]
         data.append({
             "Model": "YOLOv11",
-            "Detected Class Names": ', '.join(map(str, set(class_names_yolov11))),
+            "Detected Class Names": ', '.join(map(str, set(class_names_yolov11))),  # Display class names
             "Average Confidence Level": f"{sum(confidences_yolov11) / len(confidences_yolov11):.2f}",
             "Detection Time": f"{detection_time_yolov11:.3f} seconds"
         })
@@ -194,8 +195,6 @@ if default_image is not None:  # Check if default_image was successfully loaded
 
     # Display analysis table
     st.table(df)
-else:
-    st.error("The default image could not be loaded.")
 
 # Check model status
 else:
