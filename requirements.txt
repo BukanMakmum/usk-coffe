@@ -1,6 +1,8 @@
-pip install -r requirements.txt Belum diatur dan ini khusus untuk cara pasang module di anaconda
+streamlit
+ultralytics
+torch
+torchvision
+Pillow
+pandas
+numpy
 
-$ pip install streamlit
-$ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
-$ pip install pytube
-$ conda install -c conda-forge ultralytics
