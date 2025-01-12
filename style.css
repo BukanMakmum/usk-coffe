@@ -1,0 +1,122 @@
+/* Memperbesar ukuran teks pada judul dan menambahkan efek */
+.title-center {
+    display: flex;
+    justify-content: center;
+    font-size: 70px;  /* Membuat teks lebih besar */
+    font-weight: bold;  /* Menambahkan ketebalan pada teks */
+    margin-bottom: 20px;
+    color: #FFF6F6;  /* Ubah warna teks menjadi lebih terang */
+    text-shadow: 4px 4px 6px #000000;  /* Tambahkan bayangan teks yang lebih kuat */
+    font-family: 'Arial', sans-serif;  /* Menggunakan font Arial */
+    text-align: center;  /* Menyelarangkan teks di tengah */
+}
+
+/* Penataan halaman utama dengan latar belakang yang menarik */
+.stApp {
+    margin: auto;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: auto;
+    background: linear-gradient(315deg, #582ea1 3%, #7dc4ff 38%, #36cfcc 68%, #a92ed3 98%);
+    animation: gradient 15s ease infinite;
+    background-size: 400% 400%;
+    background-attachment: fixed;
+}
+
+/* Animasi untuk background */
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Menghilangkan header dan footer */
+.stApp > header {
+    background-color: transparent;
+    display: none;
+}
+
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* Styling tombol */
+div.stButton {
+    display: flex;
+    justify-content: center;
+}
+
+div.stButton > button:first-child {
+    background-color: rgb(23, 110, 240);
+    color: white;
+    padding: 10px 20px; /* Membuat tombol lebih besar */
+    text-decoration: none;
+    font-size: 18px;
+    margin: 10px 5px;
+    cursor: pointer;
+    border-radius: 15px; /* Tombol lebih rounded */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Efek bayangan halus */
+    transition: all 0.3s ease; /* Efek transisi saat tombol hover */
+}
+
+/* Ubah warna tombol saat hover menjadi merah */
+div.stButton > button:first-child:hover {
+    background-color: rgb(228, 8, 11); /* Merah */
+    color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Tambahan bayangan saat hover */
+    transform: translateY(-3px); /* Mengangkat tombol saat hover */
+}
+
+/* Efek saat tombol ditekan */
+div.stButton > button:first-child:active {
+    transform: translateY(2px); /* Efek ketika tombol ditekan */
+}
+
+/* Styling untuk gambar */
+img {
+    border: 4px solid #f5f5f5;
+    border-radius: 15px; /* Membuat sudut gambar lebih halus */
+    padding: 10px; /* Memberikan jarak padding lebih besar */
+    transition: all 0.3s ease; /* Efek transisi saat gambar di-hover */
+}
+
+/* Ubah warna sorot gambar saat hover menjadi merah */
+img:hover {
+    transform: scale(1.05); /* Efek zoom saat gambar di-hover */
+    border-color: red; /* Merah */
+}
+
+/* Styling untuk video */
+video {
+    border: 4px solid #f5f5f5;
+    border-radius: 15px;
+    padding: 10px;
+    transition: all 0.3s ease; /* Efek transisi saat video di-hover */
+}
+
+/* Ubah warna sorot video saat hover menjadi merah */
+video:hover {
+    transform: scale(1.05); /* Efek zoom saat video di-hover */
+    border-color: red; /* Merah */
+}
+
+/* Styling tabel hasil deteksi */
+.stTable {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.stTable th, .stTable td {
+    padding: 12px 20px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.stTable th {
+    background-color: #691ded;
+    color: white;
+    font-weight: bold;
+}
+
+.stTable tr:hover {
+    background-color: #e40f0f; /* Efek hover pada baris tabel */
+}

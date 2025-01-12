@@ -1,0 +1,47 @@
+d:/Mini-Project-Experiment/04.USK-Coffe/
+├── images/
+│   ├── Gambar_Default.jpg
+│   └── Gambar_yang_Terdeteksi.jpg
+├── Log/
+│   └── debug.txt
+├── model/
+│   ├── usk-coffev8n.pt
+│   ├── usk-coffev8s.pt
+│   ├── usk-coffev8m.pt
+│   ├── usk-coffev8l.pt
+│   ├── usk-coffev8x.pt
+├── app.py
+├── settings.py
+├── style.css
+└── requirements.txt
+
+
+Langkah 1
+conda activate st
+
+Langkah 2:
+Cara 1:
+streamlit run d:/Mini-Project-Experiment/04.USK-Coffe/app.py
+
+Cara 2:
+watchmedo auto-restart --directory=d:/Mini-Project-Experiment/ --pattern=*.py --recursive -- streamlit run d:/Mini-Project-Experiment/04.USK-Coffe/app.py
+
+Cara 3:
+watchmedo auto-restart --directory=d:/Mini-Project-Experiment/ --pattern=*.py --recursive -- streamlit run --server.address 192.168.112.201 d:/Mini-Project-Experiment/04.USK-Coffe/app.py
+
+Langkah 3 (Opsional):
+Apabila terjadi duplikat file intel
+- cmd
+- set KMP_DUPLICATE_LIB_OK=TRUE
+
+atau 
+
+Tambahkan kebaris coding
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+Class Dataset: 
+0 = defect
+1 = longberry
+2 = peaberry
+3 = premium
+
