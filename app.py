@@ -1,4 +1,4 @@
-import os
+
 import logging
 from ultralytics import YOLO
 import streamlit as st
@@ -18,9 +18,6 @@ st.set_page_config(
     layout="wide",  # Use wide layout
     initial_sidebar_state="expanded"
 )
-
-# Define script directory
-script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Create log directory if it does not exist
 log_directory = "d:/GitHub/Mini-Experiment/log"
@@ -64,137 +61,100 @@ for model_key in yolo_models.keys():
 # Display header with formatted text
 st.markdown(f'<p class="title-center">Multiclass Coffee Bean Detection System using Deep Learning</p>', unsafe_allow_html=True)
 
-# Sidebar for confidence level settings and input source selection
-confidence = st.sidebar.slider("Model Confidence Level", 0.25, 1.0, 0.4, 0.01)
-source_select = st.sidebar.selectbox(f"Select Detection Object", settings.SOURCES_LIST)
+# Set default image path and process detection directly
+source_img = Image.open(DEFAULT_IMAGE)
+source_img = ImageOps.exif_transpose(source_img)  # Ensure correct image orientation
+source_img = source_img.resize((640, int(640 / source_img.width * source_img.height)))
 
-source_img = None
-boxes = {model_key: [] for model_key in yolo_models.keys()}
+# Object Detection Process
+st.subheader("Detection Process")
 
-# Flag to mark if the process button has been clicked
-process_button_clicked = False
+# Create 3 columns
+col1, col2, col3 = st.columns(3)  # Create 3 columns
 
-# If image source is selected
-if source_select == settings.IMAGE:
-    source_img = st.sidebar.file_uploader(
-        "Select Image File", type=("jpg", "jpeg", "png", 'bmp', 'webp'))
+# Column 1: Display default image
+with col1:
+    st.image(source_img, caption="Default Image", use_container_width=True)
 
-# Define default image path from settings.py
-default_image_path = settings.DEFAULT_IMAGE  # Use path from settings.py
+# Column 2: Display YOLOv8 detection results
+with col2:
+    start_time_yolov8 = time.time()
+    res_yolov8 = yolo_models['yolov8n'].predict(source_img, conf=0.4)
+    end_time_yolov8 = time.time()
+    res_yolov8_plotted = res_yolov8[0].plot()[:, :, ::-1]
+    st.image(res_yolov8_plotted, caption='YOLOv8 Detection Results', use_container_width=True)
+    detection_time_yolov8 = end_time_yolov8 - start_time_yolov8
 
-# Process object detection if the button is clicked
-if source_img is not None and st.sidebar.button("Process Detection"):
-    process_button_clicked = True  # Mark that the button has been clicked
+# Column 3: Display YOLOv11 detection results
+with col3:
+    start_time_yolov11 = time.time()
+    res_yolov11 = yolo_models['yolov11n'].predict(source_img, conf=0.4)
+    end_time_yolov11 = time.time()
+    res_yolov11_plotted = res_yolov11[0].plot()[:, :, ::-1]
+    st.image(res_yolov11_plotted, caption='YOLOv11 Detection Results', use_container_width=True)
+    detection_time_yolov11 = end_time_yolov11 - start_time_yolov11
 
-    # Object Detection Process
-    st.subheader("Detection Process")
+# Statistical Analysis of Detection Results
+st.subheader("Statistical Analysis of Detection Results")
 
-    # Create 3 columns
-    col1, col2, col3 = st.columns(3)  # Create 3 columns
+# Create analysis in table form
+data = []
 
-    # Column 1: Display default or uploaded image
-    with col1:
-        if not source_img:  # If no image is uploaded, display the default image
-            try:
-                # Load default image file
-                default_image = Image.open(default_image_path)
-                default_image = ImageOps.exif_transpose(default_image)  # Ensure correct image orientation
-                st.image(default_image, caption="Default Image", use_container_width=True)
-            except FileNotFoundError:
-                # Handle error if default image file is not found
-                st.error("Default image file not found.")
-                logging.error("Default image file not found.")
-            except Exception as ex:
-                # Handle general errors when opening the image
-                st.error(f"Error opening default image: {str(ex)}")
-                logging.error(f"Error opening default image: {str(ex)}")
-        else:  # If an image is uploaded, display the uploaded image
-            uploaded_image = Image.open(source_img)
-            uploaded_image = ImageOps.exif_transpose(uploaded_image)
-            uploaded_image = uploaded_image.resize((640, int(640 / uploaded_image.width * uploaded_image.height)))
-            st.image(uploaded_image, caption="Uploaded Image", use_container_width=True)
+# Class dictionary with corresponding class names
+class_names = {
+    0: "defect",
+    1: "longberry",
+    2: "peaberry",
+    3: "premium"
+}
 
-    # Column 2: Display YOLOv8 detection results
-    with col2:
-        start_time_yolov8 = time.time()
-        res_yolov8 = yolo_models['yolov8n'].predict(uploaded_image, conf=confidence)
-        end_time_yolov8 = time.time()
-        boxes['yolov8n'] = res_yolov8[0].boxes
-        res_yolov8_plotted = res_yolov8[0].plot()[:, :, ::-1]
-        st.image(res_yolov8_plotted, caption='YOLOv8 Detection Results', use_container_width=True)
-        detection_time_yolov8 = end_time_yolov8 - start_time_yolov8
+# Analysis for YOLOv8
+boxes_yolov8 = res_yolov8[0].boxes
+if len(boxes_yolov8) > 0:
+    detected_objects_yolov8 = [box for box in boxes_yolov8 if box.conf.item() > 0.4]
+    categories_yolov8 = [int(box.cls.item()) for box in detected_objects_yolov8]
+    class_names_yolov8 = [class_names[cls] for cls in categories_yolov8]  # Replace ID with class names
+    confidences_yolov8 = [float(box.conf.item()) for box in detected_objects_yolov8]
+    data.append({
+        "Model": "YOLOv8",
+        "Detected Class Names": ', '.join(map(str, set(class_names_yolov8))),
+        "Average Confidence Level": f"{sum(confidences_yolov8) / len(confidences_yolov8):.2f}",
+        "Detection Time": f"{detection_time_yolov8:.3f} seconds"
+    })
+else:
+    data.append({
+        "Model": "YOLOv8",
+        "Detected Class Names": "None",
+        "Average Confidence Level": "-",
+        "Detection Time": "-"
+    })
 
-    # Column 3: Display YOLOv11 detection results
-    with col3:
-        start_time_yolov11 = time.time()
-        res_yolov11 = yolo_models['yolov11n'].predict(uploaded_image, conf=confidence)
-        end_time_yolov11 = time.time()
-        boxes['yolov11n'] = res_yolov11[0].boxes
-        res_yolov11_plotted = res_yolov11[0].plot()[:, :, ::-1]
-        st.image(res_yolov11_plotted, caption='YOLOv11 Detection Results', use_container_width=True)
-        detection_time_yolov11 = end_time_yolov11 - start_time_yolov11
+# Analysis for YOLOv11
+boxes_yolov11 = res_yolov11[0].boxes
+if len(boxes_yolov11) > 0:
+    detected_objects_yolov11 = [box for box in boxes_yolov11 if box.conf.item() > 0.4]
+    categories_yolov11 = [int(box.cls.item()) for box in detected_objects_yolov11]
+    class_names_yolov11 = [class_names[cls] for cls in categories_yolov11]  # Replace ID with class names
+    confidences_yolov11 = [float(box.conf.item()) for box in detected_objects_yolov11]
+    data.append({
+        "Model": "YOLOv11",
+        "Detected Class Names": ', '.join(map(str, set(class_names_yolov11))),
+        "Average Confidence Level": f"{sum(confidences_yolov11) / len(confidences_yolov11):.2f}",
+        "Detection Time": f"{detection_time_yolov11:.3f} seconds"
+    })
+else:
+    data.append({
+        "Model": "YOLOv11",
+        "Detected Class Names": "None",
+        "Average Confidence Level": "-",
+        "Detection Time": "-"
+    })
 
-    # Statistical Analysis of Detection Results
-    st.subheader("Statistical Analysis of Detection Results")
+# Create pandas dataframe from analysis data
+df = pd.DataFrame(data)
 
-    # Create analysis in table form
-    data = []
-
-    # Class dictionary with corresponding class names
-    class_names = {
-        0: "defect",
-        1: "longberry",
-        2: "peaberry",
-        3: "premium"
-    }
-
-    # Analysis for YOLOv8
-    if len(boxes['yolov8n']) > 0:
-        # Access detection box coordinates for object counting
-        detected_objects_yolov8 = [box for box in boxes['yolov8n'] if box.conf.item() > confidence]
-        categories_yolov8 = [int(box.cls.item()) for box in detected_objects_yolov8]
-        class_names_yolov8 = [class_names[cls] for cls in categories_yolov8]  # Replace ID with class names
-        confidences_yolov8 = [float(box.conf.item()) for box in detected_objects_yolov8]
-        data.append({
-            "Model": "YOLOv8",
-            "Detected Class Names": ', '.join(map(str, set(class_names_yolov8))),  # Display class names
-            "Average Confidence Level": f"{sum(confidences_yolov8) / len(confidences_yolov8):.2f}",
-            "Detection Time": f"{detection_time_yolov8:.3f} seconds"
-        })
-    else:
-        data.append({
-            "Model": "YOLOv8",
-            "Detected Class Names": "None",
-            "Average Confidence Level": "-",
-            "Detection Time": "-"
-        })
-
-    # Analysis for YOLOv11
-    if len(boxes['yolov11n']) > 0:
-        # Access detection box coordinates for object counting
-        detected_objects_yolov11 = [box for box in boxes['yolov11n'] if box.conf.item() > confidence]
-        categories_yolov11 = [int(box.cls.item()) for box in detected_objects_yolov11]
-        class_names_yolov11 = [class_names[cls] for cls in categories_yolov11]  # Replace ID with class names
-        confidences_yolov11 = [float(box.conf.item()) for box in detected_objects_yolov11]
-        data.append({
-            "Model": "YOLOv11",
-            "Detected Class Names": ', '.join(map(str, set(class_names_yolov11))),  # Display class names
-            "Average Confidence Level": f"{sum(confidences_yolov11) / len(confidences_yolov11):.2f}",
-            "Detection Time": f"{detection_time_yolov11:.3f} seconds"
-        })
-    else:
-        data.append({
-            "Model": "YOLOv11",
-            "Detected Class Names": "None",
-            "Average Confidence Level": "-",
-            "Detection Time": "-"
-        })
-
-    # Create pandas dataframe from analysis data
-    df = pd.DataFrame(data)
-
-    # Display analysis table
-    st.table(df)
+# Display analysis table
+st.table(df)
 
 # Check model status
 else:
