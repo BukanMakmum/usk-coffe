@@ -1,8 +1,9 @@
-streamlit==1.25.0  # Ganti dengan versi Streamlit yang Anda gunakan
-ultralytics==8.0.100  # Ganti dengan versi Ultralytics YOLO
-torch==2.0.1  # Versi PyTorch
-torchvision==0.15.2
-Pillow==10.0.0
-pandas==2.1.0
-numpy==1.25.2
-opencv-python-headless==4.8.1.78
+streamlit
+ultralytics
+torch
+torchvision
+Pillow
+pandas
+numpy
+opencv-python-headless
+
